@@ -1,0 +1,75 @@
+# analisis_fourier.py
+# Análisis de señales en tiempo y frecuencia usando FFT (Python)
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+# Parámetros generales
+fs = 1000  # Frecuencia de muestreo en Hz
+t = np.linspace(0, 1, fs, endpoint=False)  # 1 segundo
+
+# Crear carpeta para guardar gráficas
+os.makedirs("graficas", exist_ok=True)
+
+# Señales
+pulso = np.where((t >= 0.4) & (t <= 0.6), 1, 0)
+escalon = np.where(t >= 0.5, 1, 0)
+senoidal_5hz = np.sin(2 * np.pi * 5 * t)
+senoidal_10hz = np.sin(2 * np.pi * 10 * t)
+lineal = 0.5 * pulso + 0.5 * senoidal_5hz
+pulso_desplazado = np.roll(pulso, 100)  # desplaza 100 muestras
+
+# Función para graficar en el dominio del tiempo
+def graficar_tiempo(signal, title, filename):
+    plt.figure(figsize=(8, 3))
+    plt.plot(t, signal)
+    plt.title(f"{title} - Dominio del Tiempo")
+    plt.xlabel("Tiempo [s]")
+    plt.ylabel("Amplitud")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(f"graficas/{filename}_tiempo.png")
+    plt.close()
+
+# Función para graficar FFT
+def graficar_fft(signal, fs, title, filename):
+    N = len(signal)
+    freq = np.fft.fftfreq(N, 1/fs)
+    fft_vals = np.fft.fft(signal)
+    magnitud = np.abs(fft_vals)[:N // 2] * 2 / N
+    fase = np.angle(fft_vals)[:N // 2]
+
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(freq[:N // 2], magnitud)
+    plt.title(f"{title} - Magnitud del Espectro")
+    plt.xlabel("Frecuencia [Hz]")
+    plt.grid()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(freq[:N // 2], fase)
+    plt.title(f"{title} - Fase del Espectro")
+    plt.xlabel("Frecuencia [Hz]")
+    plt.grid()
+
+    plt.tight_layout()
+    plt.savefig(f"graficas/{filename}_fft.png")
+    plt.close()
+
+# Lista de señales y etiquetas
+senales = [
+    (pulso, "Pulso Rectangular", "pulso"),
+    (escalon, "Función Escalón", "escalon"),
+    (senoidal_5hz, "Senoidal 5 Hz", "senoidal5"),
+    (senoidal_10hz, "Senoidal 10 Hz", "senoidal10"),
+    (lineal, "Combinación Pulso + Senoide", "lineal"),
+    (pulso_desplazado, "Pulso Desplazado", "pulso_desplazado"),
+]
+
+# Ejecutar gráficas para todas las señales
+for señal, titulo, nombre in senales:
+    graficar_tiempo(señal, titulo, nombre)
+    graficar_fft(señal, fs, titulo, nombre)
+
+print("✅ Gráficas guardadas en la carpeta 'graficas/'")
